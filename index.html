@@ -108,6 +108,20 @@
             justify-content: space-between;
             align-items: center;
         }
+        /* Custom Class for Header Centering */
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center horizontally */
+            text-align: center;
+        }
+        .streak-box {
+            display: flex;
+            justify-content: center; /* Center the streak elements */
+            align-items: center;
+            width: 100%;
+            padding-top: 8px;
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -316,6 +330,7 @@
             }
             
             const text = document.getElementById(fieldId).value;
+            const docRef = getDailyDocRef(userId);
             
             const updates = {
                 [dataField]: text,
@@ -337,13 +352,13 @@
 
             // Save the journal content (always uses setDoc for safety)
             try {
-                await setDoc(getDailyDocRef(userId), updates, { merge: true });
+                await setDoc(docRef, updates, { merge: true });
                 displayMessage('Log Saved!');
             } catch (e) {
                 console.error("Long text save failed, attempting final re-auth:", e);
                 displayMessage('Save failed. Attempting final reconnect...', 'error');
                 await auth.currentUser.reload();
-                await setDoc(getDailyDocRef(userId), updates, { merge: true });
+                await setDoc(docRef, updates, { merge: true });
                 displayMessage('Log Saved after re-auth!');
             }
         }
@@ -611,10 +626,10 @@
             let systemInstruction;
 
             if (prayerStyle === 'prophetic') {
-                prompt = `Start the prayer with a full paragraph dedicated to praising God for His character and thanking Him for His grace, love, and provision. Use declarative and faith-filled language. Then, generate the prayer body focusing on the topic: "${topic}". The prayer must include strong, declarative phrases like 'I decree,' 'I declare,' 'I bind,' and 'I loose.' The prayer must be grounded in Scripture and must weave in 1-3 relevant Bible verses cited in parentheses (e.g., Romans 8:28) directly into the text. The prayer should be focused on grace and end with the declaration: 'in Jesus' mighty name, Amen.'`;
+                prompt = `Start the prayer with a full paragraph dedicated to praising God for His character and thanking Him for His grace, love, and provision. Use declarative and faith-filled language. Then, generate the prayer body focusing on the topic: "${topic}". The prayer must include strong, declarative phrases like 'I decree,' 'I declare,' 'I bind,' and 'I loose.' The prayer must be grounded in Scripture and must weave in 1-3 relevant Bible verses cited using declarative phrases like 'as it says in Philippians 4:6' directly into the text. The prayer should be focused on grace and end with the declaration: 'in Jesus' mighty name, Amen.'`;
                 systemInstruction = "You are a Christian spiritual warfare expert. Your output must be a bold, faith-filled declaration suitable for reading aloud and centered on God's grace.";
             } else { // Breakthrough/Clarice Fluitt style
-                prompt = `Start the prayer with a full paragraph dedicated to praising God for His character and thanking Him for His grace, love, and provision. Use declarative and faith-filled language. Then, generate the prayer body focusing on the topic: "${topic}". The prayer should be bold, filled with hope, encourage stepping out in faith. The prayer must be grounded in Scripture and must weave in 1-3 relevant Bible verses cited in parentheses (e.g., Romans 8:28) directly into the text. End with the declaration: 'in Jesus' mighty name, Amen.'`;
+                prompt = `Start the prayer with a full paragraph dedicated to praising God for His character and thanking Him for His grace, love, and provision. Use declarative and faith-filled language. Then, generate the prayer body focusing on the topic: "${topic}". The prayer should be bold, filled with hope, encourage stepping out in faith. The prayer must be grounded in Scripture and must weave in 1-3 relevant Bible verses cited using declarative phrases like 'as it says in Philippians 4:6' directly into the text. End with the declaration: 'in Jesus' mighty name, Amen.'`;
                 systemInstruction = "You are an anointed, bold, and encouraging Christian intercessor focused on grace and breakthrough. Your output must be a powerful, heartfelt prayer.";
             }
 
@@ -635,9 +650,9 @@
 
             const combinedText = `Morning Reflection: "${journalText}" \n\n Dream/Vision: "${dreamText}"`;
 
-            const prompt = `Based ONLY on the following combined journal entries and dreams, identify the dominant emotional tone (e.g., peace, striving, gratitude, worry) and one simple, grace-centered focus for the user's day (e.g., focus on rest, receive forgiveness, practice trust). Provide the analysis in two short paragraphs.`;
+            const prompt = `Analyze the following combined journal entries and dreams. Identify the underlying struggles (e.g., financial worry, self-doubt, decision fatigue, loneliness) and any revealed desires. Based on this analysis, generate a list of 3-5 specific, actionable PRAYER POINTS framed as intercession. Do not offer direct advice; only structure the prayer points. Each prayer point MUST be grounded in Scripture and cite one relevant Bible verse in parentheses (e.g., Romans 8:28).`;
             
-            const systemInstruction = `You are a wise spiritual mentor. Analyze the following text: ${combinedText}. Your analysis must be non-judgemental, rooted in grace, and encourage the user to rely on Christ, not self-effort. Do not invent details not present in the text.`;
+            const systemInstruction = `You are a supportive devotional assistant. Analyze the text: ${combinedText}. Your output must be a list of 3-5 specific PRAYER POINTS derived directly from the user's emotional struggles and needs, formatted clearly with bullet points. Do not offer suggestions; only frame the action as an invitation to prayer.`;
 
             const insightText = await fetchGemini(prompt, systemInstruction);
             if (insightText) updateAIOutput(insightText);
@@ -747,12 +762,16 @@
 
         <!-- HEADER AND DASHBOARD -->
         <div class="card color-teal text-white p-4" style="background-color: #008080;">
-            <h1 class="text-xl font-bold">The Morning Anchor Checklist</h1>
-            <p id="user-id" class="text-sm">User ID: Loading...</p>
-            <p id="today-date" class="text-sm font-semibold">Date: Loading...</p>
-            <div class="mt-2 flex items-center justify-between">
-                <span class="text-sm font-medium">Consecutive Streak:</span>
-                <span id="streak-count" class="text-4xl font-extrabold color-gold text-[#ccac00]">0</span>
+            <div class="header-content">
+                <h1 class="text-xl font-bold">The Morning Anchor Checklist</h1>
+                <p id="user-id" class="text-sm">User ID: Loading...</p>
+                <p id="today-date" class="text-sm font-semibold">Date: Loading...</p>
+            </div>
+            <div class="mt-2 streak-box">
+                <div class="text-center flex flex-col items-center">
+                    <span class="text-sm font-medium">Consecutive Streak:</span>
+                    <span id="streak-count" class="text-4xl font-extrabold text-white leading-none">0</span>
+                </div>
             </div>
         </div>
 
@@ -855,7 +874,7 @@
                 
                 <!-- 3. JOURNAL ANALYZER -->
                 <button id="analyze-journal-btn" class="w-full bg-[#ffb6c1] hover:bg-[#ff9aa2] text-[#2c3e50] font-bold py-2 rounded-lg transition duration-150">
-                    ANALYZE JOURNAL & SUGGEST FOCUS
+                    ANALYZE JOURNAL & GENERATE PRAYER POINTS
                 </button>
             </div>
 
